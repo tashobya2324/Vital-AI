@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Patient Profile - John Smith | Vital AI</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+</head>
+<body class="bg-light">
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-user-injured"></i> John Smith - Patient Profile</h2>
+    <button class="btn btn-primary" onclick="window.print()">
+      <i class="fas fa-print"></i> Print / Export
+    </button>
+  </div>
+
+  <!-- Patient Info Card -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Patient Information</h5>
+      <p><strong>Patient ID:</strong> P-1001</p>
+      <p><strong>Age / Gender:</strong> 42 yrs, Male</p>
+      <p><strong>Diagnosis:</strong> Cardiac Arrhythmia</p>
+      <p><strong>Known Allergies:</strong> Amiodarone, Penicillin</p>
+      <p><strong>Current Status:</strong> <span class="badge bg-success">Stable</span></p>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Patient History Timeline</h5>
+      <ul class="list-group list-group-flush" id="historyTimeline">
+        <li class="list-group-item">[2025-04-02] Admitted to room 301 for arrhythmia evaluation.</li>
+        <li class="list-group-item">[2025-04-03] Initial ECG and blood tests completed.</li>
+        <li class="list-group-item">[2025-04-04] Prescribed Beta Blockers.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Prescription Section -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="card-title">Prescriptions</h5>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#prescriptionModal">
+          <i class="fas fa-plus"></i> Add Prescription
+        </button>
+      </div>
+      <ul class="list-group" id="prescriptionList">
+        <!-- Dynamic prescriptions -->
+      </ul>
+    </div>
+  </div>
+
+  <!-- AI Report Section -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">AI Condition Report</h5>
+      <div class="input-group mb-3">
+        <input type="text" class="form-control" placeholder="Ask AI about John Smith's condition..." id="userInput">
+        <button class="btn btn-outline-primary" onclick="sendMessage()">
+          <i class="fas fa-robot"></i> Generate Report
+        </button>
+      </div>
+      <button class="btn btn-secondary mb-3" onclick="autoGenerateAIReport()">
+        <i class="fas fa-sync-alt"></i> Auto Generate Full AI Report
+      </button>
+      <div id="response" class="bg-white p-3 border rounded"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="prescriptionModal" tabindex="-1" aria-labelledby="prescriptionModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="prescriptionModalLabel">Add Prescription</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="prescriptionForm">
+          <div class="mb-3">
+            <label for="medicationName" class="form-label">Medication Name</label>
+            <input type="text" class="form-control" id="medicationName" required>
+          </div>
+          <div class="mb-3">
+            <label for="dosage" class="form-label">Dosage</label>
+            <input type="text" class="form-control" id="dosage" required>
+          </div>
+          <div class="mb-3">
+            <label for="instructions" class="form-label">Instructions</label>
+            <textarea class="form-control" id="instructions" rows="2"></textarea>
+          </div>
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="aiCheck">
+            <label class="form-check-label" for="aiCheck">
+              Check for Drug-Drug Interactions (AI)
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Save Prescription</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+  const patientData = {
+    name: "John Smith",
+    allergies: ["Amiodarone", "Penicillin"],
+    prescriptions: JSON.parse(localStorage.getItem('prescriptions')) || [],
+    history: [
+      "[2025-04-02] Admitted to room 301 for arrhythmia evaluation.",
+      "[2025-04-03] Initial ECG and blood tests completed.",
+      "[2025-04-04] Prescribed Beta Blockers."
+    ]
+  };
+
+  function updateUI() {
+    const list = document.getElementById('prescriptionList');
+    list.innerHTML = '';
+    patientData.prescriptions.forEach(pres => {
+      list.innerHTML += `<li class="list-group-item">
+        <strong>${pres.medication}</strong> - ${pres.dosage}<br>
+        <small>${pres.instructions}</small>
+      </li>`;
+    });
+
+    localStorage.setItem('prescriptions', JSON.stringify(patientData.prescriptions));
+  }
+
+  document.getElementById('prescriptionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const medication = document.getElementById('medicationName').value;
+    const dosage = document.getElementById('dosage').value;
+    const instructions = document.getElementById('instructions').value;
+    const checkAI = document.getElementById('aiCheck').checked;
+
+    const newPres = { medication, dosage, instructions };
+    patientData.prescriptions.push(newPres);
+    const newEntry = `[${new Date().toISOString().split('T')[0]}] New prescription: ${medication}`;
+    patientData.history.push(newEntry);
+    document.getElementById('historyTimeline').innerHTML += `<li class="list-group-item">${newEntry}</li>`;
+
+    updateUI();
+    autoGenerateAIReport(); // Auto generate report after prescription is saved
+
+    if (checkAI) {
+      document.getElementById('userInput').value = `Check for drug interactions between ${medication} and allergies: ${patientData.allergies.join(', ')}`;
+      sendMessage();
+    }
+
+    document.getElementById('prescriptionForm').reset();
+    const modal = bootstrap.Modal.getInstance(document.getElementById('prescriptionModal'));
+    modal.hide();
+  });
+
+  updateUI();
+
+  async function sendMessage() {
+    const input = document.getElementById('userInput').value;
+    const responseDiv = document.getElementById('response');
+    if (!input) {
+      responseDiv.innerHTML = 'Enter a message';
+      return;
+    }
+    responseDiv.innerHTML = 'Loading, please wait...';
+
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer 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",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "deepseek/deepseek-r1:free",
+          messages: [{ role: "user", content: input }]
+        })
+      });
+      const data = await response.json();
+      const markdownText = data.choices?.[0]?.message?.content || 'No response received.';
+      responseDiv.innerHTML = marked.parse(markdownText);
+    } catch (error) {
+      responseDiv.innerHTML = 'Error: ' + error.message;
+    }
+  }
+
+  async function autoGenerateAIReport() {
+    const responseDiv = document.getElementById('response');
+    responseDiv.innerHTML = 'Auto-generating AI report, please wait...';
+
+    const patientName = patientData.name;
+    const patientAllergies = patientData.allergies.join(', ');
+    const patientPrescriptions = patientData.prescriptions.map(p => `${p.medication} (${p.dosage})`).join('; ') || "No prescriptions yet";
+    const patientHistory = patientData.history.join('\n');
+
+    const prompt = `
+You are a medical assistant AI helping a doctor manage a patient profile.
+Patient name: ${patientName}
+Known allergies: ${patientAllergies || "None"}
+Current prescriptions: ${patientPrescriptions}
+Medical history:
+${patientHistory}
+
+Please do the following:
+1. Analyze the current medications and check for any potential Drug-Drug Interactions (DDI).
+2. Highlight any medications that may cause allergic reactions based on the patient's known allergies.
+3. Suggest safer alternatives if any risks are found.
+4. Provide a brief summary of the patient's condition and history.
+5. Keep the explanation clear and structured.
+
+Thank you.
+`;
+
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer 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",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "deepseek/deepseek-r1:free",
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+
+      const data = await response.json();
+      const markdownText = data.choices?.[0]?.message?.content || 'No response received from AI.';
+      responseDiv.innerHTML = marked.parse(markdownText);
+    } catch (error) {
+      responseDiv.innerHTML = 'Error during AI report: ' + error.message;
+    }
+  }
+</script>
+
+</body>
+</html>
