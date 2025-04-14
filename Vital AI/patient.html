@@ -50,9 +50,7 @@
           <i class="fas fa-plus"></i> Add Prescription
         </button>
       </div>
-      <ul class="list-group" id="prescriptionList">
-        <!-- Dynamic prescriptions -->
-      </ul>
+      <ul class="list-group" id="prescriptionList"></ul>
     </div>
   </div>
 
@@ -179,11 +177,11 @@
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": "Bearer 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",
+          "Authorization": "Bearer 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",
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "deepseek/deepseek-r1:free",
+          model: "openai/gpt-3.5-turbo",
           messages: [{ role: "user", content: input }]
         })
       });
@@ -218,19 +216,17 @@ Please do the following:
 3. Suggest safer alternatives if any risks are found.
 4. Provide a brief summary of the patient's condition and history.
 5. Keep the explanation clear and structured.
-
-Thank you.
 `;
 
     try {
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": "Bearer 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",
+          "Authorization": "Bearer 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",
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "deepseek/deepseek-r1:free",
+          model: "openai/gpt-3.5-turbo",
           messages: [{ role: "user", content: prompt }]
         })
       });
