@@ -17,7 +17,7 @@
     </button>
   </div>
 
-  <!-- Patient Info Card -->
+  <!-- Patient Info -->
   <div class="card mb-4">
     <div class="card-body">
       <h5 class="card-title">Patient Information</h5>
@@ -41,7 +41,7 @@
     </div>
   </div>
 
-  <!-- Prescription Section -->
+  <!-- Prescriptions -->
   <div class="card mb-4">
     <div class="card-body">
       <div class="d-flex justify-content-between align-items-center mb-3">
@@ -54,7 +54,7 @@
     </div>
   </div>
 
-  <!-- AI Report Section -->
+  <!-- AI Report -->
   <div class="card mb-4">
     <div class="card-body">
       <h5 class="card-title">AI Condition Report</h5>
@@ -72,7 +72,7 @@
   </div>
 </div>
 
-<!-- Modal -->
+<!-- Prescription Modal -->
 <div class="modal fade" id="prescriptionModal" tabindex="-1" aria-labelledby="prescriptionModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -127,12 +127,8 @@
     const list = document.getElementById('prescriptionList');
     list.innerHTML = '';
     patientData.prescriptions.forEach(pres => {
-      list.innerHTML += `<li class="list-group-item">
-        <strong>${pres.medication}</strong> - ${pres.dosage}<br>
-        <small>${pres.instructions}</small>
-      </li>`;
+      list.innerHTML += `<li class="list-group-item"><strong>${pres.medication}</strong> - ${pres.dosage}<br><small>${pres.instructions}</small></li>`;
     });
-
     localStorage.setItem('prescriptions', JSON.stringify(patientData.prescriptions));
   }
 
@@ -150,7 +146,7 @@
     document.getElementById('historyTimeline').innerHTML += `<li class="list-group-item">${newEntry}</li>`;
 
     updateUI();
-    autoGenerateAIReport(); // Auto generate report after prescription is saved
+    autoGenerateAIReport();
 
     if (checkAI) {
       document.getElementById('userInput').value = `Check for drug interactions between ${medication} and allergies: ${patientData.allergies.join(', ')}`;
@@ -158,8 +154,13 @@
     }
 
     document.getElementById('prescriptionForm').reset();
-    const modal = bootstrap.Modal.getInstance(document.getElementById('prescriptionModal'));
-    modal.hide();
+
+    try {
+      const modal = bootstrap.Modal.getInstance(document.getElementById('prescriptionModal'));
+      if (modal) modal.hide();
+    } catch (err) {
+      console.warn("Modal instance not found or already closed.");
+    }
   });
 
   updateUI();
@@ -168,28 +169,31 @@
     const input = document.getElementById('userInput').value;
     const responseDiv = document.getElementById('response');
     if (!input) {
-      responseDiv.innerHTML = 'Enter a message';
+      responseDiv.innerHTML = 'Please enter a message.';
       return;
     }
+
     responseDiv.innerHTML = 'Loading, please wait...';
 
     try {
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": "Bearer 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",
+          "Authorization": "Bearer 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", 
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "openai/gpt-3.5-turbo",
+          model: "deepseek/deepseek-r1:free",
           messages: [{ role: "user", content: input }]
         })
       });
       const data = await response.json();
+      console.log("AI response:", data);
       const markdownText = data.choices?.[0]?.message?.content || 'No response received.';
       responseDiv.innerHTML = marked.parse(markdownText);
     } catch (error) {
       responseDiv.innerHTML = 'Error: ' + error.message;
+      console.error("Fetch error:", error);
     }
   }
 
@@ -205,7 +209,7 @@
     const prompt = `
 You are a medical assistant AI helping a doctor manage a patient profile.
 Patient name: ${patientName}
-Known allergies: ${patientAllergies || "None"}
+Known allergies: ${patientAllergies}
 Current prescriptions: ${patientPrescriptions}
 Medical history:
 ${patientHistory}
@@ -222,20 +226,22 @@ Please do the following:
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": "Bearer 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",
+          "Authorization": "Bearer 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", // Replace with your valid key
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "openai/gpt-3.5-turbo",
+          model: "deepseek/deepseek-r1:free",
           messages: [{ role: "user", content: prompt }]
         })
       });
 
       const data = await response.json();
+      console.log("Auto AI report:", data);
       const markdownText = data.choices?.[0]?.message?.content || 'No response received from AI.';
       responseDiv.innerHTML = marked.parse(markdownText);
     } catch (error) {
       responseDiv.innerHTML = 'Error during AI report: ' + error.message;
+      console.error("Auto-report fetch error:", error);
     }
   }
 </script>
